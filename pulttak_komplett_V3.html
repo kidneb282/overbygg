@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pulttak">
+<meta name="theme-color" content="#0f1117">
+<title>Pulttak — Komplett Planlegger</title>
+<style>
+:root{
+  --bg:#0f1117;--bg2:#181c27;--bg3:#1e2435;--border:#2a3045;
+  --text:#e8ecf4;--muted:#7a8299;
+  --ok:#22d3a0;--ok-bg:#0a2e24;
+  --warn:#f6a623;--warn-bg:#2e1f06;
+  --err:#f05252;--err-bg:#2e0f0f;
+  --accent:#4f8ef7;--accent2:#a78bfa;--accent3:#f59e0b;
+  --rad:12px;--rsm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:0 0 48px;font-size:15px}
+
+.header{background:#0f1117;border-bottom:1px solid var(--border);padding:0;position:sticky;top:0;z-index:20}
+.header-top{padding:16px 16px 0}
+.header-top h1{font-size:17px;font-weight:700}
+.header-top p{font-size:11px;color:var(--muted);margin-top:2px;font-family:Menlo,monospace}
+.tab-bar{display:flex;gap:0;padding:12px 16px 0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab-bar::-webkit-scrollbar{display:none}
+.tab{padding:8px 16px;font-size:13px;font-weight:500;color:var(--muted);border:none;background:none;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;-webkit-tap-highlight-color:transparent}
+.tab.active{color:var(--accent);border-bottom:2px solid var(--accent)}
+
+.page{display:none;padding:0}
+.page.active{display:block}
+
+.info-banner{margin:12px 12px 0;padding:11px 14px;background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.3);border-radius:var(--rad);font-size:12px;color:#93b8fa;font-family:Menlo,monospace;line-height:1.7}
+
+.section{margin:12px 12px 0;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad);overflow:hidden}
+.section-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:12px 14px 8px;border-bottom:1px solid var(--border)}
+.divider{height:1px;background:var(--border);margin:0 14px}
+
+.slider-row{padding:13px 14px;border-bottom:1px solid var(--border)}
+.slider-row:last-child{border-bottom:none}
+.slider-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.slider-label{font-size:13px;color:var(--text);line-height:1.3;max-width:70%}
+.slider-value{font-family:Menlo,monospace;font-size:15px;font-weight:600;color:var(--accent);white-space:nowrap}
+.slider-hint{font-size:11px;color:var(--muted);margin-top:5px}
+
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;background:var(--border);border-radius:3px;outline:none;cursor:pointer;touch-action:pan-y;display:block}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:30px;height:30px;border-radius:50%;background:var(--accent);border:2.5px solid var(--bg);box-shadow:0 0 0 4px rgba(79,142,247,.2);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:var(--accent);border:2.5px solid var(--bg);cursor:pointer}
+input[type=range]:active::-webkit-slider-thumb{background:#6aa0ff;box-shadow:0 0 0 6px rgba(79,142,247,.3)}
+
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px}
+.mc{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:11px 12px 9px}
+.mc-lbl{font-size:10.5px;color:var(--muted);margin-bottom:3px;line-height:1.3}
+.mc-val{font-family:Menlo,monospace;font-size:20px;font-weight:600;line-height:1.1}
+.mc-sub{font-size:10px;margin-top:3px;color:var(--muted)}
+.val-ok{color:var(--ok)}.val-warn{color:var(--warn)}.val-err{color:var(--err)}
+
+.status-banner{margin:0 12px;padding:14px;border-radius:var(--rad);border:1px solid;margin-top:8px}
+.status-banner.ok{background:var(--ok-bg);border-color:var(--ok)}
+.status-banner.warn{background:var(--warn-bg);border-color:var(--warn)}
+.status-banner.err{background:var(--err-bg);border-color:var(--err)}
+.st{font-weight:700;font-size:14px;margin-bottom:5px}
+.status-banner.ok .st{color:var(--ok)}
+.status-banner.warn .st{color:var(--warn)}
+.status-banner.err .st{color:var(--err)}
+.sb{font-size:13px;line-height:1.5}
+
+.badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px}
+.badge-ok{background:var(--ok-bg);color:var(--ok);border:1px solid var(--ok)}
+.badge-warn{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn)}
+.badge-err{background:var(--err-bg);color:var(--err);border:1px solid var(--err)}
+
+.tw{overflow-x:auto;padding:0 12px 12px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:8px;border-bottom:1px solid var(--border)}
+td{padding:8px;border-bottom:1px solid rgba(42,48,69,.5);color:var(--text);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td.num{text-align:right;font-family:Menlo,monospace;white-space:nowrap;font-size:12px}
+tr.total-row td{font-weight:700;color:var(--accent);border-top:1px solid var(--border);border-bottom:none;padding-top:10px}
+
+.svg-wrap{padding:12px 12px 4px}
+.svg-wrap svg{display:block;width:100%;border-radius:8px;background:#131729}
+.svg-cap{font-size:10px;color:var(--muted);text-align:center;margin-top:5px;padding-bottom:8px}
+
+.mat-cat{padding:12px 14px 6px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-top:1px solid var(--border)}
+.mat-cat:first-child{border-top:none}
+.mat-row{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-bottom:1px solid rgba(42,48,69,.5)}
+.mat-row:last-child{border-bottom:none}
+.mat-name{font-size:13px;color:var(--text)}
+.mat-dim{font-size:11px;color:var(--muted);margin-top:2px}
+.mat-qty{font-family:Menlo,monospace;font-size:14px;font-weight:600;color:var(--accent);text-align:right}
+.mat-unit{font-size:10px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <h1>Pulttak Planlegger</h1>
+    <p>C24 48&times;198 mm &mdash; alle beregninger oppdaterer seg live</p>
+  </div>
+  <div class="tab-bar">
+    <button class="tab active" onclick="showTab('kalk')">Kalkulator</button>
+    <button class="tab" onclick="showTab('tegn')">Tegninger</button>
+    <button class="tab" onclick="showTab('mat')">Materialliste</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB 1: KALKULATOR
+══════════════════════════════════════════ -->
+<div id="page-kalk" class="page active">
+
+<div class="info-banner">
+  Taket heller fra husvegg (h&oslash;yt) ned mot fremre takfot (lavt).<br>
+  Bredde og dybde m&aring;les til senter ytterste s&oslash;yle &middot; Veggrem forankres i husvegg (ingen s&oslash;yle ved vegg).<br>
+  C24 48&times;198 mm &nbsp;&middot;&nbsp; S&oslash;yle 4 stk = 192&times;198 mm &nbsp;&middot;&nbsp; Drager 3 stk = 144&times;198 mm
+</div>
+
+<div class="section">
+  <div class="section-title">Grunnm&aring;l</div>
+  <div class="slider-row">
+    <div class="slider-header"><span class="slider-label">Maks.h&oslash;yde &mdash; uk &oslash;vre vindu</span><span class="slider-value" id="wallH-o">3.50 m</span></div>
+    <input type="range" id="wallH" min="2.50" max="4.00" step="0.01" value="3.50">
+  </div>
+  <div class="slider-row">
+    <div class="slider-header"><span class="slider-label">Dybde (husvegg til senter fremre s&oslash;yle)</span><span class="slider-value" id="depth-o">3.70 m</span></div>
+    <input type="range" id="depth" min="1.00" max="6.00" step="0.05" value="3.70">
+  </div>
+  <div class="slider-row">
+    <div class="slider-header"><span class="slider-label">Bredde (senter til senter ytterste s&oslash;yle)</span><span class="slider-value" id="width-o">7.70 m</span></div>
+    <input type="range" id="width" min="3.00" max="12.00" step="0.10" value="7.70">
+  </div>
+  <div class="slider-row">
+    <div class="slider-header"><span class="slider-label">S&oslash;yleh&oslash;yde &mdash; uk drager ytterst</span><span class="slider-value" id="postH-o">2.20 m</span></div>
+    <input type="range" id="postH" min="1.80" max="3.20" step="0.01" value="2.20">
+  </div>
+  <div class="slider-row">
+    <div class="slider-header"><span class="slider-label">Frirom uk vindu &rarr; topp tak</span><span class="slider-value" id="margin-o">100 mm</span></div>
+    <input type="range" id="margin" min="0" max="250" step="5" value="100">
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">S&oslash;yleoppsett &mdash; antall per side</div>
+  <div class="slider-row">
+    <div class="slider-header"><span class="slider-label">Langside &mdash; fremre takfot (inkl. hjørner)</span><span class="slider-value" id="nFront-o">4 stk</span></div>
+    <input type="range" id="nFront" min="2" max="8" step="1" value="4">
+    <div class="slider-hint" id="nFront-gap">Avstand: --</div>
+  </div>
+  <div class="slider-row">
+    <div class="slider-header"><span class="slider-label">Venstre kortvegg (inkl. hjørner)</span><span class="slider-value" id="nLeft-o">2 stk</span></div>
+    <input type="range" id="nLeft" min="2" max="5" step="1" value="2">
+    <div class="slider-hint" id="nLeft-gap">Avstand: --</div>
+  </div>
+  <div class="slider-row">
+    <div class="slider-header"><span class="slider-label">H&oslash;yre kortvegg (inkl. hjørner)</span><span class="slider-value" id="nRight-o">2 stk</span></div>
+    <input type="range" id="nRight" min="2" max="5" step="1" value="2">
+    <div class="slider-hint" id="nRight-gap">Avstand: --</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Konstruksjonstykkelser</div>
+  <div class="slider-row">
+    <div class="slider-header"><span class="slider-label">S&oslash;yle: antall C24 samskrudd</span><span class="slider-value" id="postN-o">4 stk</span></div>
+    <input type="range" id="postN" min="2" max="6" step="1" value="4">
+  </div>
+  <div class="slider-row">
+    <div class="slider-header"><span class="slider-label">Drager: antall C24 samskrudd</span><span class="slider-value" id="dragN-o">3 stk</span></div>
+    <input type="range" id="dragN" min="2" max="5" step="1" value="3">
+  </div>
+  <div class="divider"></div>
+  <div class="slider-row">
+    <div class="slider-header"><span class="slider-label">B&aelig;relekter (mm)</span><span class="slider-value" id="baer-o">48 mm</span></div>
+    <input type="range" id="baer" min="22" max="73" step="1" value="48">
+  </div>
+  <div class="slider-row">
+    <div class="slider-header"><span class="slider-label">Luftelekter (mm)</span><span class="slider-value" id="luft-o">36 mm</span></div>
+    <input type="range" id="luft" min="22" max="60" step="1" value="36">
+  </div>
+  <div class="slider-row">
+    <div class="slider-header"><span class="slider-label">Taktekking inkl. underlag (mm)</span><span class="slider-value" id="tile-o">50 mm</span></div>
+    <input type="range" id="tile" min="20" max="80" step="2" value="50">
+  </div>
+  <div class="slider-row">
+    <div class="slider-header"><span class="slider-label">Takutspring (mm) &mdash; sider og front</span><span class="slider-value" id="overhang-o">400 mm</span></div>
+    <input type="range" id="overhang" min="0" max="800" step="50" value="400">
+    <div class="slider-hint">Utspring fra senter ytterste s&oslash;yle / fra husvegg</div>
+  </div>
+  <div class="slider-row">
+    <div class="slider-header"><span class="slider-label">Sperrer c/c (mm)</span><span class="slider-value" id="cc-o">400 mm</span></div>
+    <input type="range" id="cc" min="300" max="600" step="50" value="400">
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Beregningsresultater</div>
+  <div class="metrics">
+    <div class="mc"><div class="mc-lbl">Takfall</div><div class="mc-val" id="ang-shed">--</div><div class="mc-sub" id="ang-shed-lbl"></div></div>
+    <div class="mc"><div class="mc-lbl">Netto stigning</div><div class="mc-val" id="rise-net">--</div></div>
+    <div class="mc"><div class="mc-lbl">Netto veggfeste (uk drager)</div><div class="mc-val" id="eff-wall" style="font-size:17px">--</div></div>
+    <div class="mc"><div class="mc-lbl">Konstr.tykkelse</div><div class="mc-val" id="tot-thick">--</div></div>
+    <div class="mc"><div class="mc-lbl">Fri takh&oslash;yde ytterst</div><div class="mc-val" id="clear-h">--</div></div>
+    <div class="mc"><div class="mc-lbl">Total byggh&oslash;yde</div><div class="mc-val" id="tot-h">--</div></div>
+    <div class="mc"><div class="mc-lbl">Takflatelengde (m/utspring)</div><div class="mc-val" id="roof-len" style="font-size:17px">--</div></div>
+    <div class="mc"><div class="mc-lbl">S&oslash;yletverrsnitt</div><div class="mc-val" id="post-dim" style="font-size:15px">--</div></div>
+  </div>
+</div>
+
+<div class="status-banner ok" id="status-banner">
+  <div class="st" id="status-title">--</div>
+  <div class="sb" id="status-body">--</div>
+</div>
+
+<div class="section" style="margin-top:12px">
+  <div class="section-title">S&oslash;yleavstander &mdash; kontroll</div>
+  <div class="tw"><table>
+    <thead><tr><th>Plassering</th><th>Spenn</th><th>Maks.</th><th>Status</th></tr></thead>
+    <tbody id="span-rows"></tbody>
+  </table></div>
+</div>
+
+<div class="section">
+  <div class="section-title">Lagoppbygging over s&oslash;yleniv&aring;</div>
+  <div class="tw"><table>
+    <thead><tr><th>Lag (ovenfra ned)</th><th>Tykkelse</th><th>Sum</th></tr></thead>
+    <tbody id="stack-rows"></tbody>
+  </table></div>
+</div>
+
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB 2: TEGNINGER
+══════════════════════════════════════════ -->
+<div id="page-tegn" class="page">
+
+<div class="section">
+  <div class="section-title">A &mdash; Sideprofil (sett fra kortenden)</div>
+  <div class="svg-wrap">
+    <svg id="svg-side" viewBox="0 0 340 210" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+  <div class="svg-cap">Husvegg til venstre (h&oslash;y side), fremre takfot til h&oslash;yre (lav side)</div>
+</div>
+
+<div class="section">
+  <div class="section-title">B &mdash; Frontprojeksjon (sett fra fremside)</div>
+  <div class="svg-wrap">
+    <svg id="svg-front" viewBox="0 0 340 210" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+  <div class="svg-cap">Sett mot husveggen &mdash; viser s&oslash;ylene og takprofilen</div>
+</div>
+
+<div class="section">
+  <div class="section-title">C &mdash; Plantegning (sett ovenfra)</div>
+  <div class="svg-wrap">
+    <svg id="svg-plan" viewBox="0 0 340 200" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+  <div class="svg-cap">Husvegg &oslash;verst &mdash; s&oslash;yleposisjoner og sperrer</div>
+</div>
+
+<div class="section">
+  <div class="section-title">S&oslash;yleposisjoner</div>
+  <div class="tw"><table>
+    <thead><tr><th>ID</th><th>Beskrivelse</th><th>X (m)</th><th>Y (m)</th></tr></thead>
+    <tbody id="pos-rows"></tbody>
+  </table></div>
+</div>
+
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB 3: MATERIALLISTE
+══════════════════════════════════════════ -->
+<div id="page-mat" class="page">
+
+<div class="section">
+  <div class="section-title">Materialliste &mdash; generert fra kalkulatoren</div>
+  <div id="mat-list"></div>
+</div>
+
+<div class="section" style="margin-top:12px">
+  <div class="section-title">Sammendrag</div>
+  <div class="metrics">
+    <div class="mc"><div class="mc-lbl">Antall s&oslash;yleenheter</div><div class="mc-val" id="mat-posts">--</div></div>
+    <div class="mc"><div class="mc-lbl">Totalt antall C24-bord</div><div class="mc-val" id="mat-boards">--</div></div>
+    <div class="mc"><div class="mc-lbl">Sperreareal</div><div class="mc-val" id="mat-area">--</div></div>
+    <div class="mc"><div class="mc-lbl">Ant. sperrer</div><div class="mc-val" id="mat-rafters">--</div></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+var H_C24 = 0.198;
+var OVER_10PCT = 1.10;
+var IDS = ['wallH','depth','width','postH','margin','nFront','nLeft','nRight','postN','dragN','baer','luft','tile','cc','overhang'];
+
+function ff(v,d){if(d===undefined)d=2;return parseFloat(v).toFixed(d);}
+function g(id){return document.getElementById(id);}
+function ri(id){return parseInt(g(id).value,10);}
+function rf(id){return parseFloat(g(id).value);}
+function slCol(a){return a>=15?'val-ok':a>=13?'val-warn':'val-err';}
+function slTxt(a){
+  if(a>=20)return 'God vinkel';
+  if(a>=15)return 'OK (>= 15 gr)';
+  if(a>=13)return 'Akseptabelt (13-15 gr)';
+  return 'For lavt - under 13 gr';
+}
+function spBadge(v,max){
+  var c=v<=max?'ok':v<=max+1?'warn':'err';
+  var l=c==='ok'?'OK':c==='warn'?'Grense':'For langt';
+  return '<span class="badge badge-'+c+'">'+l+'</span>';
+}
+function ceil5(n){return Math.ceil(n/5)*5;}
+
+function showTab(t){
+  var tabs=['kalk','tegn','mat'];
+  for(var i=0;i<tabs.length;i++){
+    var p=g('page-'+tabs[i]);
+    var b=document.querySelectorAll('.tab')[i];
+    if(tabs[i]===t){p.className='page active';b.className='tab active';}
+    else{p.className='page';b.className='tab';}
+  }
+}
+
+function makePosts(width,depth,nFront,nLeft,nRight){
+  var posts=[],pi,px2,py2;
+  for(pi=0;pi<nFront;pi++){
+    px2=(nFront===1)?width/2:pi*width/(nFront-1);
+    posts.push({id:'F'+(pi+1),label:'Fremre rad, pos '+(pi+1),x:px2,y:depth,side:'front'});
+  }
+  for(pi=1;pi<nLeft-1;pi++){
+    py2=pi*depth/(nLeft-1);
+    posts.push({id:'V'+pi,label:'Venstre kortvegg pos '+pi,x:0,y:py2,side:'left'});
+  }
+  for(pi=1;pi<nRight-1;pi++){
+    py2=pi*depth/(nRight-1);
+    posts.push({id:'H'+pi,label:'Hoyre kortvegg pos '+pi,x:width,y:py2,side:'right'});
+  }
+  return posts;
+}
+
+function postColor(side){return side==='front'?'#4f8ef7':'#a78bfa';}
+function postFill(side){return side==='front'?'#0a1628':'#1a1030';}
+
+function upd(){
+  /* ── Les alle verdier ── */
+  var wallH    = rf('wallH');
+  var depth    = rf('depth');
+  var width    = rf('width');
+  var postH    = rf('postH');
+  var margin   = rf('margin') / 1000;
+  var nFront   = ri('nFront');
+  var nLeft    = ri('nLeft');
+  var nRight   = ri('nRight');
+  var postN    = ri('postN');
+  var dragN    = ri('dragN');
+  var baer     = rf('baer')  / 1000;
+  var luft     = rf('luft')  / 1000;
+  var tile     = rf('tile')  / 1000;
+  var cc       = rf('cc')    / 1000;
+  var overhang = rf('overhang') / 1000;
+
+  /* ── Avstand mellom soylene ── */
+  var gapFront  = width  / (nFront - 1);
+  var gapLeft   = depth  / (nLeft  - 1);
+  var gapRight  = depth  / (nRight - 1);
+
+  /* ── Oppdater slider-visninger ── */
+  g('wallH-o').textContent    = ff(wallH)  + ' m';
+  g('depth-o').textContent    = ff(depth)  + ' m';
+  g('width-o').textContent    = ff(width)  + ' m';
+  g('postH-o').textContent    = ff(postH)  + ' m';
+  g('margin-o').textContent   = Math.round(margin   * 1000) + ' mm';
+  g('nFront-o').textContent   = nFront + ' stk';
+  g('nLeft-o').textContent    = nLeft  + ' stk';
+  g('nRight-o').textContent   = nRight + ' stk';
+  g('postN-o').textContent    = postN  + ' stk';
+  g('dragN-o').textContent    = dragN  + ' stk';
+  g('baer-o').textContent     = Math.round(baer * 1000) + ' mm';
+  g('luft-o').textContent     = Math.round(luft * 1000) + ' mm';
+  g('tile-o').textContent     = Math.round(tile * 1000) + ' mm';
+  g('cc-o').textContent       = Math.round(cc   * 1000) + ' mm';
+  g('overhang-o').textContent = Math.round(overhang * 1000) + ' mm';
+  g('nFront-gap').textContent = 'Avstand mellom soylene: ' + ff(gapFront, 2) + ' m';
+  g('nLeft-gap').textContent  = 'Avstand mellom soylene: ' + ff(gapLeft,  2) + ' m';
+  g('nRight-gap').textContent = 'Avstand mellom soylene: ' + ff(gapRight, 2) + ' m';
+
+  /* ── Beregninger ── */
+  var constrAbove = baer + luft + tile;
+  var totalThick  = H_C24 + constrAbove;
+  var effWall     = wallH - margin - totalThick;
+  var rise        = effWall - postH;
+  var shedAng     = Math.atan2(rise, depth) * 180 / Math.PI;
+  /* Sperrelengde = fra veggrem til fremre takfot-kant inkl. utspring */
+  var roofLen     = Math.sqrt((depth + overhang) * (depth + overhang) + rise * rise);
+  var postBmm     = postN * 48;
+
+  /* ── Metrikkort ── */
+  var angEl = g('ang-shed');
+  if(rise > 0){
+    angEl.textContent = ff(shedAng, 1) + '\u00b0';
+    angEl.className   = 'mc-val ' + slCol(shedAng);
+    g('ang-shed-lbl').textContent = slTxt(shedAng);
+    g('ang-shed-lbl').style.color = shedAng >= 15 ? 'var(--ok)' : shedAng >= 13 ? 'var(--warn)' : 'var(--err)';
+  } else {
+    angEl.textContent = '--';
+    angEl.className   = 'mc-val val-err';
+    g('ang-shed-lbl').textContent = 'Negativt fall!';
+    g('ang-shed-lbl').style.color = 'var(--err)';
+  }
+  g('rise-net').textContent  = rise > 0 ? ff(rise, 3)  + ' m' : '--';
+  g('eff-wall').textContent  = ff(effWall, 3) + ' m';
+  g('tot-thick').textContent = Math.round(totalThick * 1000) + ' mm';
+  g('clear-h').textContent   = ff(postH, 2)  + ' m';
+  g('tot-h').textContent     = ff(wallH - margin, 2) + ' m';
+  g('roof-len').textContent  = rise > 0 ? ff(roofLen, 2) + ' m' : '--';
+  g('post-dim').textContent  = postBmm + '\u00d7198 mm';
+
+  /* ── Status-banner ── */
+  var banner = g('status-banner');
+  var stitle = g('status-title');
+  var sbody  = g('status-body');
+  if(rise <= 0){
+    banner.className   = 'status-banner err';
+    stitle.textContent = 'Negativt takfall!';
+    sbody.textContent  = 'Konstruksjonstykkelsen (' + Math.round(totalThick*1000) + ' mm) + frirom (' + Math.round(margin*1000) + ' mm) overstiger maks.hoyde.';
+  } else if(shedAng < 13){
+    banner.className   = 'status-banner err';
+    stitle.textContent = 'Takfall for lavt: ' + ff(shedAng, 1) + ' grader';
+    sbody.textContent  = 'Minimum 13 grader anbefales. Stigning ' + ff(rise, 3) + ' m over ' + ff(depth, 2) + ' m.';
+  } else if(shedAng < 15){
+    banner.className   = 'status-banner warn';
+    stitle.textContent = 'Grenseland: ' + ff(shedAng, 1) + ' grader';
+    sbody.textContent  = 'Funksjonelt, men sjekk produsentens minimumskrav (15 gr). Netto veggfeste: ' + ff(effWall, 3) + ' m.';
+  } else {
+    banner.className   = 'status-banner ok';
+    stitle.textContent = 'Godkjent! Takfall ' + ff(shedAng, 1) + ' grader';
+    sbody.textContent  = 'Netto veggfeste: ' + ff(effWall, 3) + ' m. Stigning: ' + ff(rise, 3) + ' m. Fri takhoyde: ' + ff(postH, 2) + ' m.';
+  }
+
+  /* ── Soyleavstander ── */
+  var spH = '';
+  var sprows = [
+    ['Langside front (' + nFront + ' stk)', ff(gapFront, 2) + ' m', '3.00 m', spBadge(gapFront, 3.0)],
+    ['Venstre kortvegg (' + nLeft + ' stk)', ff(gapLeft, 2) + ' m', '4.00 m', spBadge(gapLeft, 4.0)],
+    ['Hoyre kortvegg (' + nRight + ' stk)', ff(gapRight, 2) + ' m', '4.00 m', spBadge(gapRight, 4.0)]
+  ];
+  for(var k = 0; k < sprows.length; k++)
+    spH += '<tr><td>' + sprows[k][0] + '</td><td class="num">' + sprows[k][1] + '</td><td class="num">' + sprows[k][2] + '</td><td>' + sprows[k][3] + '</td></tr>';
+  g('span-rows').innerHTML = spH;
+
+  /* ── Lagoppbygging ── */
+  var cum = 0, sh = '';
+  var stk = [
+    ['Taktekking inkl. underlag', Math.round(tile * 1000)],
+    ['Luftelekter',               Math.round(luft * 1000)],
+    ['Baerelekter',               Math.round(baer * 1000)],
+    ['Drager C24 48x198',         198]
+  ];
+  for(var j = 0; j < stk.length; j++){
+    cum += stk[j][1];
+    sh += '<tr><td>' + stk[j][0] + '</td><td class="num">' + stk[j][1] + ' mm</td><td class="num">' + cum + ' mm</td></tr>';
+  }
+  sh += '<tr class="total-row"><td>Total</td><td class="num">' + Math.round(totalThick * 1000) + ' mm</td><td class="num">--</td></tr>';
+  sh += '<tr><td style="color:var(--muted)">+ Frirom</td><td class="num" style="color:var(--muted)">' + Math.round(margin * 1000) + ' mm</td><td class="num" style="color:var(--muted)">--</td></tr>';
+  g('stack-rows').innerHTML = sh;
+
+  drawTegninger(wallH, depth, width, postH, nFront, nLeft, nRight, effWall, rise, shedAng, roofLen, totalThick, cc, overhang);
+  drawMaterial(width, depth, nFront, nLeft, nRight, postN, dragN, roofLen, cc, tile, baer, luft, overhang);
+}
+
+/* ════════════════════════════════════════════
+   TEGNINGER
+   Koordinatsystem for alle tre:
+     Bredde B = senter-til-senter ytterste soyle langs front
+     Dybde D  = husvegg til senter fremre soyle
+     Overhang = utspring fra soyle/vegg ut til takkant
+
+   A — Sideprofil (horisontal=dybde, vertikal=hoyde)
+     x=0 = husvegg (ingen soyle her, veggrem forankret)
+     x=depth*s = senter fremre soyle
+     x=(depth+overhang)*s = fremre takfot-kant
+     y=0 = bakken
+
+   B — Frontprojeksjon (horisontal=bredde, vertikal=hoyde)
+     Sett rett mot husveggen fra fremsiden
+     Viser: fremre soylerekke, frontdrager, takprofil
+     Utspring: takflaten stikker overhang utenfor soylene pa sidene
+
+   C — Plantegning (horisontal=bredde, vertikal=dybde)
+     Husvegg opp, fremre takfot ned
+     Soylerekke langs fremre linje (y=depth)
+     Dragere: veggrem (y=0 stiplet mot vegg), frontdrager (y=depth),
+              sidedragere (x=0 og x=width)
+     Utspring: stiplet kontur rundt hele taket
+════════════════════════════════════════════ */
+
+function drawTegninger(wallH, depth, width, postH, nFront, nLeft, nRight, effWall, rise, shedAng, roofLen, totalThick, cc, overhang){
+  var posts = makePosts(width, depth, nFront, nLeft, nRight);
+
+  /* ── A: SIDEPROFIL ── */
+  (function(){
+    /*
+      Visning: profil sett fra kortenden (langs breddeaksen).
+      Horisontal akse: dybde fra husvegg (x0) til takfot-kant (x0+depth*s+overhang*s)
+      Vertikal akse: hoyde fra bakken (ygnd) oppover.
+
+      Nokkelx-koordinater:
+        x0        = husvegg (veggrem-feste)
+        xSoyle    = x0 + depth*s         = senter fremre soyle
+        xTakkant  = x0 + (depth+overhang)*s = fremre takfot-kant
+
+      Nokkelhoyder (fra ygnd):
+        yPostH    = soyletopp = ygnd - postH*s
+        yEffW     = uk drager ved vegg = ygnd - effWall*s
+        yTopVegg  = topp takstein ved vegg = ygnd - (wallH)*s
+          (wallH er allerede netto etter frirom, dvs. topp tak)
+    */
+    var s = 46;
+    var x0 = 52, ygnd = 188;
+    var xSoyle   = x0 + depth * s;
+    var xTakkant = x0 + (depth + overhang) * s;
+    var yPostH   = ygnd - postH * s;
+    var yEffW    = ygnd - effWall * s;
+    var yTopVegg = ygnd - (wallH) * s;
+    var svg = '';
+
+    svg += '<defs><marker id="as" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#4b5563"/></marker><marker id="asL" markerWidth="6" markerHeight="6" refX="1" refY="3" orient="auto"><path d="M6,0 L0,3 L6,6 Z" fill="#4b5563"/></marker></defs>';
+
+    /* Bakke-linje */
+    svg += '<line x1="32" y1="'+ygnd+'" x2="'+(xTakkant+12)+'" y2="'+ygnd+'" stroke="#4b5563" stroke-width="0.5" stroke-dasharray="2,3"/>';
+
+    /* Husvegg (loddrett stiplet) */
+    svg += '<line x1="'+x0+'" y1="'+ygnd+'" x2="'+x0+'" y2="'+(yTopVegg-4)+'" stroke="#4f8ef7" stroke-width="1" stroke-dasharray="4,3"/>';
+    svg += '<rect x="'+(x0-10)+'" y="'+yTopVegg+'" width="10" height="'+(ygnd-yTopVegg)+'" fill="#2a3a5a" stroke="#4f8ef7" stroke-width="0.8"/>';
+    svg += '<text x="'+(x0-12)+'" y="'+(ygnd*0.5+yTopVegg*0.5)+'" font-size="7" fill="#4f8ef7" text-anchor="middle" transform="rotate(-90,'+(x0-12)+','+(ygnd*0.5+yTopVegg*0.5)+')">HUSVEGG</text>';
+
+    /* Takflate-polygon (fra veggrem til takfot-kant) */
+    var yTopFront = yPostH - totalThick * s;
+    svg += '<polygon points="'+x0+','+yEffW+' '+xTakkant+','+yPostH+' '+xTakkant+','+(yPostH+totalThick*s)+' '+x0+','+(yEffW+totalThick*s)+'" fill="rgba(79,142,247,0.10)" stroke="#4f8ef7" stroke-width="0.6"/>';
+
+    /* Overkant takflate = uk drager + totalThick */
+    svg += '<line x1="'+x0+'" y1="'+yEffW+'" x2="'+xTakkant+'" y2="'+yPostH+'" stroke="#4f8ef7" stroke-width="1.5"/>';
+
+    /* Drager ved vegg (horisontal linje = veggrem-feste) */
+    svg += '<line x1="'+(x0-6)+'" y1="'+yEffW+'" x2="'+(x0+8)+'" y2="'+yEffW+'" stroke="#f6a623" stroke-width="2"/>';
+    svg += '<text x="'+(x0+10)+'" y="'+(yEffW+3)+'" font-size="6.5" fill="#f6a623">uk veggrem '+ff(effWall,2)+'m</text>';
+
+    /* Soyle (loddrett, ved xSoyle) */
+    svg += '<rect x="'+(xSoyle-4)+'" y="'+yPostH+'" width="8" height="'+(ygnd-yPostH)+'" fill="#fef3c7" stroke="#f6a623" stroke-width="1.2"/>';
+    svg += '<line x1="'+xSoyle+'" y1="'+(yPostH-4)+'" x2="'+xSoyle+'" y2="'+(yPostH-12)+'" stroke="#a78bfa" stroke-width="0.8" stroke-dasharray="2,2"/>';
+    svg += '<text x="'+xSoyle+'" y="'+(yPostH-14)+'" font-size="6.5" fill="#a78bfa" text-anchor="middle">Soyle</text>';
+
+    /* Takfot-kant (loddrett stiplet) */
+    svg += '<line x1="'+xTakkant+'" y1="'+yPostH+'" x2="'+xTakkant+'" y2="'+(ygnd+5)+'" stroke="#a78bfa" stroke-width="0.8" stroke-dasharray="3,2"/>';
+    svg += '<text x="'+xTakkant+'" y="'+(ygnd+14)+'" font-size="6.5" fill="#a78bfa" text-anchor="middle">Takfot</text>';
+
+    /* Kotlinje D (husvegg til senter soyle) */
+    svg += '<line x1="'+x0+'" y1="'+(ygnd+22)+'" x2="'+xSoyle+'" y2="'+(ygnd+22)+'" stroke="#4b5563" stroke-width="0.5" marker-end="url(#as)" marker-start="url(#asL)"/>';
+    svg += '<text x="'+((x0+xSoyle)/2)+'" y="'+(ygnd+32)+'" font-size="6.5" fill="#7a8299" text-anchor="middle">D='+ff(depth)+'m</text>';
+
+    /* Kotlinje utspring */
+    svg += '<line x1="'+xSoyle+'" y1="'+(ygnd+22)+'" x2="'+xTakkant+'" y2="'+(ygnd+22)+'" stroke="#a78bfa" stroke-width="0.5" marker-end="url(#as)" marker-start="url(#asL)"/>';
+    svg += '<text x="'+((xSoyle+xTakkant)/2)+'" y="'+(ygnd+32)+'" font-size="6.5" fill="#a78bfa" text-anchor="middle">'+Math.round(overhang*1000)+'mm</text>';
+
+    /* Kotlinje soylehode h */
+    svg += '<line x1="35" y1="'+ygnd+'" x2="35" y2="'+yPostH+'" stroke="#a78bfa" stroke-width="0.5" marker-end="url(#as)" marker-start="url(#asL)"/>';
+    svg += '<text x="29" y="'+((ygnd+yPostH)/2)+'" font-size="6.5" fill="#a78bfa" text-anchor="middle" transform="rotate(-90,29,'+((ygnd+yPostH)/2)+')">h='+ff(postH)+'m</text>';
+
+    /* Kotlinje effWall */
+    svg += '<line x1="'+(x0-20)+'" y1="'+ygnd+'" x2="'+(x0-20)+'" y2="'+yEffW+'" stroke="#f6a623" stroke-width="0.5" marker-end="url(#as)" marker-start="url(#asL)"/>';
+    svg += '<text x="'+(x0-26)+'" y="'+((ygnd+yEffW)/2)+'" font-size="6.5" fill="#f6a623" text-anchor="middle" transform="rotate(-90,'+(x0-26)+','+((ygnd+yEffW)/2)+')">'+ff(effWall,3)+'m</text>';
+
+    /* Takfall-vinkel */
+    var angRad = Math.atan2(rise, depth + overhang);
+    svg += '<path d="M '+(xTakkant-22)+' '+yPostH+' A 22 22 0 0 0 '+(xTakkant-22*Math.cos(angRad))+' '+(yPostH-22*Math.sin(angRad))+'" fill="none" stroke="#4f8ef7" stroke-width="0.8"/>';
+    svg += '<text x="'+(xTakkant-34)+'" y="'+(yPostH-10)+'" font-size="7" fill="#4f8ef7" text-anchor="middle">'+ff(shedAng,1)+'\u00b0</text>';
+
+    g('svg-side').innerHTML = svg;
+  })();
+
+  /* ── B: FRONTPROJEKSJON ── */
+  (function(){
+    /*
+      Sett rett mot husveggen, bakfra til foran.
+      Horisontal akse: bredde. x0 = venstre ytterste soyle, x0+W = hoyre ytterste soyle.
+      Utspring: takflaten stikker ovSide = overhang utenfor soylene pa begge sider.
+      Vertikal akse: hoyde fra bakken.
+
+      Takprofil sett forfra:
+        - Bunnen (soyletopp / frontdrager): horisontalt pa yPostH, fra x0-ovSide til x0+W+ovSide
+        - Topp takstein ved vegg: horisontal linje pa yTopVegg (kun vist som stiplet referanse)
+        - Siden er ikke synlig forfra - vi ser en flat horisontal takfot
+
+      Hva som vises:
+        - Husvegg (bakvegg, stiplet) pa topp
+        - Frontdrager (uk drager) horisontal
+        - Soylene (loddrett) fra bakken til uk drager
+        - Takutstikk (stiplet kontur)
+        - Veggrem-feste (stiplet linje pa effWall-hoyde mot veggen)
+    */
+    var s = 30;
+    var x0 = 55, ygnd = 185;
+    var W  = width * s;
+    var ovSide = overhang * s;
+    var yPostH = ygnd - postH * s;
+    var yEffW  = ygnd - effWall * s;
+    var yTopVegg = ygnd - (wallH) * s;
+    var svg = '';
+
+    svg += '<defs><marker id="af" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#4b5563"/></marker><marker id="afL" markerWidth="6" markerHeight="6" refX="1" refY="3" orient="auto"><path d="M6,0 L0,3 L6,6 Z" fill="#4b5563"/></marker></defs>';
+
+    /* Husvegg (bakgrunnsreferanse, stiplet) */
+    svg += '<line x1="'+x0+'" y1="'+yTopVegg+'" x2="'+(x0+W)+'" y2="'+yTopVegg+'" stroke="#4f8ef7" stroke-width="0.8" stroke-dasharray="4,3"/>';
+    svg += '<text x="'+(x0+W/2)+'" y="'+(yTopVegg-4)+'" font-size="7" fill="#4f8ef7" text-anchor="middle">HUSVEGG / VEGGREM ('+ff(effWall,2)+'m)</text>';
+
+    /* Veggrem-linje (effWall) */
+    svg += '<line x1="'+x0+'" y1="'+yEffW+'" x2="'+(x0+W)+'" y2="'+yEffW+'" stroke="#f6a623" stroke-width="1" stroke-dasharray="5,3"/>';
+    svg += '<text x="'+(x0+W+4)+'" y="'+(yEffW+3)+'" font-size="6.5" fill="#f6a623">Veggrem '+ff(effWall,2)+'m</text>';
+
+    /* Takutspring (stiplet kontur rundt taket) */
+    svg += '<rect x="'+(x0-ovSide)+'" y="'+yPostH+'" width="'+(W+2*ovSide)+'" height="'+H_C24*s+'" fill="rgba(167,139,250,0.10)" stroke="#a78bfa" stroke-width="0.8" stroke-dasharray="4,3"/>';
+    svg += '<line x1="'+(x0-ovSide)+'" y1="'+(yPostH+H_C24*s)+'" x2="'+(x0-ovSide)+'" y2="'+ygnd+'" stroke="#a78bfa" stroke-width="0.5" stroke-dasharray="3,2"/>';
+    svg += '<line x1="'+(x0+W+ovSide)+'" y1="'+(yPostH+H_C24*s)+'" x2="'+(x0+W+ovSide)+'" y2="'+ygnd+'" stroke="#a78bfa" stroke-width="0.5" stroke-dasharray="3,2"/>';
+
+    /* Frontdrager (full bredde inkl. utspring) */
+    svg += '<rect x="'+(x0-ovSide)+'" y="'+yPostH+'" width="'+(W+2*ovSide)+'" height="'+H_C24*s+'" fill="rgba(247,166,35,0.20)" stroke="#f6a623" stroke-width="0.8"/>';
+    svg += '<text x="'+(x0+W/2)+'" y="'+(yPostH+H_C24*s/2+3)+'" font-size="7" fill="#f6a623" text-anchor="middle">Frontdrager</text>';
+
+    /* Soylene */
+    var pi;
+    for(pi = 0; pi < nFront; pi++){
+      var fx = x0 + (nFront === 1 ? W/2 : pi * W / (nFront - 1));
+      svg += '<rect x="'+(fx-4)+'" y="'+(yPostH+H_C24*s)+'" width="8" height="'+(ygnd-yPostH-H_C24*s)+'" fill="#fef3c7" stroke="#f6a623" stroke-width="1.2"/>';
+      svg += '<text x="'+fx+'" y="'+(ygnd+10)+'" font-size="6.5" fill="#4f8ef7" text-anchor="middle">F'+(pi+1)+'</text>';
+    }
+
+    /* Kotlinjer */
+    /* Bredde senter-til-senter soyle */
+    svg += '<line x1="'+x0+'" y1="'+(ygnd+18)+'" x2="'+(x0+W)+'" y2="'+(ygnd+18)+'" stroke="#4b5563" stroke-width="0.5" marker-end="url(#af)" marker-start="url(#afL)"/>';
+    svg += '<text x="'+(x0+W/2)+'" y="'+(ygnd+28)+'" font-size="7" fill="#7a8299" text-anchor="middle">B='+ff(width)+'m (senter-senter)</text>';
+
+    /* Utspring sider */
+    svg += '<line x1="'+(x0-ovSide)+'" y1="'+(ygnd+18)+'" x2="'+x0+'" y2="'+(ygnd+18)+'" stroke="#a78bfa" stroke-width="0.5" marker-end="url(#af)" marker-start="url(#afL)"/>';
+    svg += '<text x="'+(x0-ovSide/2)+'" y="'+(ygnd+28)+'" font-size="6" fill="#a78bfa" text-anchor="middle">'+Math.round(overhang*1000)+'mm</text>';
+    svg += '<line x1="'+(x0+W)+'" y1="'+(ygnd+18)+'" x2="'+(x0+W+ovSide)+'" y2="'+(ygnd+18)+'" stroke="#a78bfa" stroke-width="0.5" marker-end="url(#af)" marker-start="url(#afL)"/>';
+    svg += '<text x="'+(x0+W+ovSide/2)+'" y="'+(ygnd+28)+'" font-size="6" fill="#a78bfa" text-anchor="middle">'+Math.round(overhang*1000)+'mm</text>';
+
+    /* Soylehode h */
+    svg += '<line x1="37" y1="'+ygnd+'" x2="37" y2="'+(yPostH+H_C24*s)+'" stroke="#a78bfa" stroke-width="0.5" marker-end="url(#af)" marker-start="url(#afL)"/>';
+    svg += '<text x="31" y="'+((ygnd+yPostH+H_C24*s)/2)+'" font-size="6.5" fill="#a78bfa" text-anchor="middle" transform="rotate(-90,31,'+((ygnd+yPostH+H_C24*s)/2)+')">h='+ff(postH)+'m</text>';
+
+    g('svg-front').innerHTML = svg;
+  })();
+
+  /* ── C: PLANTEGNING ── */
+  (function(){
+    /*
+      Koordinatsystem: x=bredde, y=dybde
+      x=0 = venstre ytterste soyle, x=width = hoyre ytterste soyle
+      y=0 = husvegg, y=depth = senter fremre soylerekke
+
+      Takutspring vises som stiplet kontur rundt soyleomrisstegnet:
+        Sider: x=-overhang til x=width+overhang
+        Front: y=depth til y=depth+overhang
+        Bak: y=0 (ingen utspring mot husvegg - taket er forankret i vegg)
+
+      Dragere/veggrem:
+        Veggrem: y=0, x=0 til x=width (stiplet mot vegg)
+        Frontdrager: y=depth, x=-overhang til x=width+overhang
+        Venstre sidedrager: x=0, y=0 til y=depth+overhang
+        Hoyre sidedrager: x=width, y=0 til y=depth+overhang
+    */
+    var PL=44, PR=32, PT=34, PB=36, SW=340, SH=200;
+    var dW = SW - PL - PR;
+    var dH = SH - PT - PB;
+    var sc = Math.min(dW / (width + 2*overhang), dH / (depth + overhang + 0.2));
+    var oX = PL + (dW - width*sc) / 2;
+    var oY = PT + overhang*sc;
+    function px(x){return oX + x * sc;}
+    function py(y){return oY + y * sc;}
+    var ovSc = overhang * sc;
+    var svg = '';
+
+    svg += '<defs><marker id="ap" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#4b5563"/></marker><marker id="apL" markerWidth="6" markerHeight="6" refX="1" refY="3" orient="auto"><path d="M6,0 L0,3 L6,6 Z" fill="#4b5563"/></marker></defs>';
+
+    /* Takutspring-kontur (stiplet, lilla) */
+    svg += '<rect x="'+(px(0)-ovSc)+'" y="'+(py(0)-ovSc*0)+'" width="'+(width*sc+2*ovSc)+'" height="'+(depth*sc+ovSc)+'" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-width="0.8" stroke-dasharray="4,3" rx="2"/>';
+    svg += '<text x="'+px(width/2)+'" y="'+(py(0)-ovSc*0-5)+'" font-size="6.5" fill="#a78bfa" text-anchor="middle">Takutspring '+Math.round(overhang*1000)+'mm (stiplet)</text>';
+
+    /* Husvegg (oppe) */
+    svg += '<rect x="'+(px(0)-2)+'" y="'+(py(0)-8)+'" width="'+(width*sc+4)+'" height="8" fill="#2a3a5a" stroke="#4f8ef7" stroke-width="0.8" rx="1"/>';
+    svg += '<text x="'+px(width/2)+'" y="'+(py(0)-11)+'" font-size="6.5" fill="#4f8ef7" text-anchor="middle">HUSVEGG / VEGGREM</text>';
+
+    /* Soyleomrade (platting) */
+    svg += '<rect x="'+px(0)+'" y="'+py(0)+'" width="'+(width*sc)+'" height="'+(depth*sc)+'" fill="#161e30" stroke="#2a3045" stroke-width="0.7" rx="2"/>';
+
+    /* Sperrer c/c (løper fra husvegg mot front) */
+    var numSp = Math.round(width / cc);
+    var si;
+    for(si = 0; si <= numSp; si++){
+      var ssx = si * (width / numSp);
+      svg += '<line x1="'+px(ssx)+'" y1="'+py(0)+'" x2="'+px(ssx)+'" y2="'+(py(depth)+ovSc)+'" stroke="#92400e" stroke-width="0.6" stroke-dasharray="3,3" opacity="0.45"/>';
+    }
+
+    /* Dragere */
+    /* Veggrem (langs husvegg, y=0) */
+    svg += '<line x1="'+px(0)+'" y1="'+(py(0)+2)+'" x2="'+px(width)+'" y2="'+(py(0)+2)+'" stroke="#f6a623" stroke-width="2" stroke-dasharray="7,3" opacity="0.9"/>';
+    /* Frontdrager (langs fremre takfot, inkl. utspring) */
+    svg += '<line x1="'+(px(0)-ovSc)+'" y1="'+(py(depth)-2)+'" x2="'+(px(width)+ovSc)+'" y2="'+(py(depth)-2)+'" stroke="#f6a623" stroke-width="2" stroke-dasharray="7,3" opacity="0.9"/>';
+    /* Venstre sidedrager */
+    svg += '<line x1="'+(px(0)+2)+'" y1="'+py(0)+'" x2="'+(px(0)+2)+'" y2="'+(py(depth)+ovSc)+'" stroke="#f6a623" stroke-width="2" stroke-dasharray="7,3" opacity="0.9"/>';
+    /* Hoyre sidedrager */
+    svg += '<line x1="'+(px(width)-2)+'" y1="'+py(0)+'" x2="'+(px(width)-2)+'" y2="'+(py(depth)+ovSc)+'" stroke="#f6a623" stroke-width="2" stroke-dasharray="7,3" opacity="0.9"/>';
+
+    /* Takfall-pil */
+    var midX = px(width / 2);
+    svg += '<line x1="'+midX+'" y1="'+(py(0)+12)+'" x2="'+midX+'" y2="'+(py(depth)-8)+'" stroke="#4b5563" stroke-width="0.8" marker-end="url(#ap)"/>';
+    svg += '<text x="'+(midX+5)+'" y="'+(py(depth/2)+3)+'" font-size="7" fill="#7a8299">Fall '+(rise>0?ff(shedAng,1):'--')+'gr</text>';
+
+    /* Soylene */
+    var ni;
+    for(ni = 0; ni < posts.length; ni++){
+      var po = posts[ni];
+      var cx = px(po.x), cy = py(po.y);
+      var pcol = postColor(po.side);
+      var pfill = postFill(po.side);
+      svg += '<circle cx="'+cx+'" cy="'+cy+'" r="4" fill="'+pfill+'" stroke="'+pcol+'" stroke-width="1.5"/>';
+      var lx = cx, ly = cy, anc = 'middle', ldy = -7;
+      if(Math.abs(po.x) < 0.01)             {lx = cx-6; anc = 'end';   ldy = 0;}
+      else if(Math.abs(po.x-width) < 0.01)  {lx = cx+6; anc = 'start'; ldy = 0;}
+      else if(po.y < 0.01)                   {ly = cy-6; ldy = 0;}
+      else if(Math.abs(po.y-depth) < 0.01)  {ly = cy+11; ldy = 0;}
+      svg += '<text x="'+lx+'" y="'+(ly+ldy)+'" font-size="7" fill="'+pcol+'" text-anchor="'+anc+'" font-family="monospace">'+po.id+'</text>';
+    }
+
+    /* Kotlinjer */
+    /* Bredde B (senter-senter) */
+    var dY = py(depth) + ovSc + 14;
+    svg += '<line x1="'+px(0)+'" y1="'+dY+'" x2="'+px(width)+'" y2="'+dY+'" stroke="#4b5563" stroke-width="0.5" marker-end="url(#ap)" marker-start="url(#apL)"/>';
+    svg += '<text x="'+px(width/2)+'" y="'+(dY+9)+'" font-size="6.5" fill="#7a8299" text-anchor="middle">B='+ff(width)+'m (s-s soyle)</text>';
+
+    /* Dybde D (husvegg til senter soyle) */
+    var dX = px(width) + ovSc + 12;
+    svg += '<line x1="'+dX+'" y1="'+py(0)+'" x2="'+dX+'" y2="'+py(depth)+'" stroke="#4b5563" stroke-width="0.5" marker-end="url(#ap)" marker-start="url(#apL)"/>';
+    svg += '<text x="'+(dX+5)+'" y="'+(py(depth/2)+3)+'" font-size="6.5" fill="#7a8299">D='+ff(depth)+'m</text>';
+
+    g('svg-plan').innerHTML = svg;
+  })();
+
+  /* Søyleposisjonstabell */
+  var pSorted = posts.slice().sort(function(a,b){return a.id < b.id ? -1 : 1;});
+  var ph = '';
+  for(var m = 0; m < pSorted.length; m++){
+    var p = pSorted[m];
+    var pc = postColor(p.side);
+    ph += '<tr>'
+      + '<td><strong style="font-family:monospace;color:'+pc+'">'+p.id+'</strong></td>'
+      + '<td style="font-size:12px;color:var(--muted)">'+p.label+'</td>'
+      + '<td class="num">'+ff(p.x,2)+'</td>'
+      + '<td class="num">'+ff(p.y,2)+'</td>'
+      + '</tr>';
+  }
+  g('pos-rows').innerHTML = ph;
+}
+
+function drawMaterial(width, depth, nFront, nLeft, nRight, postN, dragN, roofLen, cc, tile, baer, luft, overhang){
+  var takWidth   = width  + 2 * overhang;
+  var takDybde   = depth  + overhang;
+  var areal      = takWidth * takDybde;
+  var numSperrer = Math.ceil(takWidth / cc) + 1;
+
+  var nPostUnits      = nFront + (nLeft - 2) + (nRight - 2);
+  var totalPostBoards = nPostUnits * postN;
+
+  var frontDragerLen = takWidth;
+  var veggremLen     = width;
+  var sideDragerLen  = takDybde;
+  var totalDragerLen = frontDragerLen + veggremLen + 2 * sideDragerLen;
+  var nDragerBoards  = Math.ceil(totalDragerLen / 5.4) * dragN;
+
+  var sperreBoardLen = ceil5(roofLen + 0.2);
+  var nSperreBoards  = numSperrer;
+  var totalBoards    = totalPostBoards + nDragerBoards + nSperreBoards;
+
+  var baerLekterLen  = Math.ceil(numSperrer) * roofLen * OVER_10PCT;
+  var luftLekterLen  = baerLekterLen;
+  var takAreal       = areal * OVER_10PCT;
+
+  g('mat-posts').textContent   = nPostUnits   + ' stk';
+  g('mat-boards').textContent  = totalBoards  + ' stk';
+  g('mat-area').textContent    = ff(areal, 1) + ' m2';
+  g('mat-rafters').textContent = numSperrer   + ' stk';
+
+  var cats = [
+    {name:'Soyletre (samskrudd)', items:[
+      {name:'C24 48x198', dim:'Soyle ('+postN+'x samskrudd)', qty:totalPostBoards+' stk', unit:'a 5.4 m = '+ff(totalPostBoards*5.4,1)+' lm'}
+    ]},
+    {name:'Dragere og veggrem', items:[
+      {name:'C24 48x198', dim:'Frontdrager ('+dragN+'x) '+ff(frontDragerLen,2)+'m inkl. utspring', qty:Math.ceil(frontDragerLen/5.4)*dragN+' stk', unit:'a 5.4 m'},
+      {name:'C24 48x198', dim:'Veggrem ('+dragN+'x) '+ff(veggremLen,2)+'m', qty:Math.ceil(veggremLen/5.4)*dragN+' stk', unit:'a 5.4 m'},
+      {name:'C24 48x198', dim:'Sidedrager ('+dragN+'x) '+ff(sideDragerLen,2)+'m x2', qty:Math.ceil(sideDragerLen/5.4)*dragN*2+' stk', unit:'a 5.4 m'}
+    ]},
+    {name:'Sperrer', items:[
+      {name:'C24 48x198', dim:'Lengde '+sperreBoardLen+'m, c/c '+Math.round(cc*1000)+'mm', qty:nSperreBoards+' stk', unit:'c/c '+Math.round(cc*1000)+' mm'}
+    ]},
+    {name:'Lekter', items:[
+      {name:'48x48 baerelekter', dim:'Langs sperrene ('+numSperrer+' sperrer x '+ff(roofLen,2)+'m)', qty:Math.round(baerLekterLen)+' lm', unit:'+10% svinn'},
+      {name:'36x48 luftelekter', dim:'Langs sperrene', qty:Math.round(luftLekterLen)+' lm', unit:'+10% svinn'}
+    ]},
+    {name:'Taktekking', items:[
+      {name:'Takstein/plate', dim:'Totalt takareal '+ff(areal,1)+'m2', qty:Math.round(takAreal)+' m2', unit:'+10% svinn inkl. utspring'}
+    ]},
+    {name:'Festemateriell (ca.)', items:[
+      {name:'Konstruksjonsskruer 200mm', dim:'Soylesamskruing', qty:Math.ceil(nPostUnits*postN*8)+' stk', unit:''},
+      {name:'Konstruksjonsskruer 120mm', dim:'Drager/veggrem', qty:Math.ceil((totalDragerLen/0.6)*2)+' stk', unit:''},
+      {name:'Spikringsbeslag', dim:'Sperre mot drager', qty:nSperreBoards*2+' stk', unit:''},
+      {name:'Fundamentbolter/ankere', dim:'Soyle til fundament', qty:nPostUnits+' stk', unit:''},
+      {name:'Veggankere', dim:'Veggrem til husvegg', qty:Math.ceil(width/0.9)+' stk', unit:''}
+    ]}
+  ];
+
+  var html = '';
+  for(var c = 0; c < cats.length; c++){
+    html += '<div class="mat-cat">'+cats[c].name+'</div>';
+    for(var ii = 0; ii < cats[c].items.length; ii++){
+      var it = cats[c].items[ii];
+      html += '<div class="mat-row">'
+        + '<div><div class="mat-name">'+it.name+'</div><div class="mat-dim">'+it.dim+'</div></div>'
+        + '<div><div class="mat-qty">'+it.qty+'</div><div class="mat-unit">'+it.unit+'</div></div>'
+        + '</div>';
+    }
+  }
+  g('mat-list').innerHTML = html;
+}
+
+for(var _i = 0; _i < IDS.length; _i++){
+  (function(id){
+    var el = document.getElementById(id);
+    if(!el) return;
+    el.addEventListener('input',    upd);
+    el.addEventListener('change',   upd);
+    el.addEventListener('touchend', upd);
+  })(IDS[_i]);
+}
+upd();
+</script>
+
+</body>
+</html>
