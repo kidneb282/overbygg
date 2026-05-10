@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pulttak Kalk">
+<meta name="theme-color" content="#0f1117">
+<title>Pulttak Kalkulator</title>
+<style>
+:root {
+  --bg:      #0f1117;
+  --bg2:     #181c27;
+  --bg3:     #1e2435;
+  --border:  #2a3045;
+  --text:    #e8ecf4;
+  --muted:   #7a8299;
+  --ok:      #22d3a0;
+  --ok-bg:   #0a2e24;
+  --warn:    #f6a623;
+  --warn-bg: #2e1f06;
+  --err:     #f05252;
+  --err-bg:  #2e0f0f;
+  --accent:  #4f8ef7;
+  --radius:  12px;
+  --rsm:     8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:0 0 40px;font-size:15px}
+
+.header{background:linear-gradient(135deg,#1a2040 0%,#0f1117 100%);border-bottom:1px solid var(--border);padding:20px 16px 14px;position:sticky;top:0;z-index:10}
+.header h1{font-size:17px;font-weight:700;letter-spacing:-0.3px}
+.header p{font-size:11px;color:var(--muted);margin-top:3px;font-family:Menlo,Monaco,'Courier New',monospace}
+
+.info-banner{margin:12px 12px 0;padding:11px 14px;background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.3);border-radius:var(--radius);font-size:12px;color:#93b8fa;font-family:Menlo,Monaco,'Courier New',monospace;line-height:1.7}
+
+.section{margin:12px 12px 0;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.section-title{font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);padding:12px 14px 8px;border-bottom:1px solid var(--border)}
+
+.slider-row{padding:13px 14px;border-bottom:1px solid var(--border)}
+.slider-row:last-child{border-bottom:none}
+.slider-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.slider-label{font-size:13px;color:var(--text);line-height:1.3;max-width:70%}
+.slider-value{font-family:Menlo,Monaco,'Courier New',monospace;font-size:15px;font-weight:600;color:var(--accent);white-space:nowrap}
+
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;background:var(--border);border-radius:3px;outline:none;cursor:pointer;touch-action:pan-y;display:block}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:30px;height:30px;border-radius:50%;background:var(--accent);border:2.5px solid var(--bg);box-shadow:0 0 0 4px rgba(79,142,247,0.2);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:var(--accent);border:2.5px solid var(--bg);cursor:pointer}
+input[type=range]:active::-webkit-slider-thumb{background:#6aa0ff;box-shadow:0 0 0 6px rgba(79,142,247,0.3)}
+
+.divider{height:1px;background:var(--border);margin:0 14px}
+
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px}
+.metric-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:12px 12px 10px}
+.metric-label{font-size:10.5px;color:var(--muted);margin-bottom:4px;line-height:1.3}
+.metric-value{font-family:Menlo,Monaco,'Courier New',monospace;font-size:22px;font-weight:600;line-height:1.1}
+.metric-sub{font-size:10px;margin-top:3px;line-height:1.3}
+.val-ok  {color:var(--ok)}
+.val-warn{color:var(--warn)}
+.val-err {color:var(--err)}
+
+.status-banner{margin:0 12px;padding:14px;border-radius:var(--radius);border:1px solid;margin-top:8px}
+.status-banner.ok  {background:var(--ok-bg);  border-color:var(--ok)}
+.status-banner.warn{background:var(--warn-bg); border-color:var(--warn)}
+.status-banner.err {background:var(--err-bg);  border-color:var(--err)}
+.status-title{font-weight:700;font-size:14px;margin-bottom:5px}
+.status-banner.ok   .status-title{color:var(--ok)}
+.status-banner.warn .status-title{color:var(--warn)}
+.status-banner.err  .status-title{color:var(--err)}
+.status-body{font-size:13px;line-height:1.5}
+
+.badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px}
+.badge-ok  {background:var(--ok-bg);  color:var(--ok);  border:1px solid var(--ok)}
+.badge-warn{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn)}
+.badge-err {background:var(--err-bg); color:var(--err); border:1px solid var(--err)}
+
+.table-wrap{overflow-x:auto;padding:0 12px 12px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);padding:8px 8px 8px;border-bottom:1px solid var(--border)}
+td{padding:8px;border-bottom:1px solid rgba(42,48,69,0.6);color:var(--text);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td.num{text-align:right;font-family:Menlo,Monaco,'Courier New',monospace;white-space:nowrap;font-size:12px}
+tr.total-row td{font-weight:700;color:var(--accent);border-top:1px solid var(--border);border-bottom:none;padding-top:10px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Pulttak Kalkulator</h1>
+  <p>Overbygg terrasse &mdash; C24 48&times;198 mm</p>
+</div>
+
+<div class="info-banner">
+  Taket heller fra husvegg (h&oslash;yt) ned mot fremre takfot (lavt).<br>
+  C24 2&Prime;&times;8&Prime; = 48&times;198 mm &nbsp;&middot;&nbsp; S&oslash;yle 4 stk = 192&times;198 mm &nbsp;&middot;&nbsp; Drager 3 stk = 144&times;198 mm
+</div>
+
+<!-- GRUNNMÅL -->
+<div class="section">
+  <div class="section-title">Grunnm&aring;l</div>
+
+  <div class="slider-row">
+    <div class="slider-header">
+      <span class="slider-label">Maks. h&oslash;yde &mdash; underkant &oslash;vre vindu (m)</span>
+      <span class="slider-value" id="wallH-o">3.50 m</span>
+    </div>
+    <input type="range" id="wallH" min="2.50" max="4.00" step="0.01" value="3.50">
+  </div>
+
+  <div class="slider-row">
+    <div class="slider-header">
+      <span class="slider-label">Dybde ut fra veggen (m)</span>
+      <span class="slider-value" id="depth-o">3.70 m</span>
+    </div>
+    <input type="range" id="depth" min="1.00" max="6.00" step="0.05" value="3.70">
+  </div>
+
+  <div class="slider-row">
+    <div class="slider-header">
+      <span class="slider-label">Bredde (m)</span>
+      <span class="slider-value" id="width-o">7.70 m</span>
+    </div>
+    <input type="range" id="width" min="3.00" max="12.00" step="0.10" value="7.70">
+  </div>
+
+  <div class="slider-row">
+    <div class="slider-header">
+      <span class="slider-label">S&oslash;yleh&oslash;yde &mdash; underkant drager ytterst (m)</span>
+      <span class="slider-value" id="postH-o">2.20 m</span>
+    </div>
+    <input type="range" id="postH" min="1.80" max="3.20" step="0.01" value="2.20">
+  </div>
+
+  <div class="slider-row">
+    <div class="slider-header">
+      <span class="slider-label">Frirom underkant vindu &rarr; topp takstein (mm)</span>
+      <span class="slider-value" id="margin-o">100 mm</span>
+    </div>
+    <input type="range" id="margin" min="0" max="250" step="5" value="100">
+  </div>
+</div>
+
+<!-- SØYLEOPPSETT -->
+<div class="section">
+  <div class="section-title">S&oslash;yleoppsett &mdash; antall per side</div>
+
+  <div class="slider-row">
+    <div class="slider-header">
+      <span class="slider-label">Langside &mdash; fremre takfot (inkl. hjørner)</span>
+      <span class="slider-value" id="nFront-o">4 stk</span>
+    </div>
+    <input type="range" id="nFront" min="2" max="8" step="1" value="4">
+    <div style="font-size:11px;color:var(--muted);margin-top:6px" id="nFront-gap">Avstand: --</div>
+  </div>
+
+  <div class="slider-row">
+    <div class="slider-header">
+      <span class="slider-label">Venstre kortvegg (inkl. hjørner)</span>
+      <span class="slider-value" id="nLeft-o">2 stk</span>
+    </div>
+    <input type="range" id="nLeft" min="2" max="5" step="1" value="2">
+    <div style="font-size:11px;color:var(--muted);margin-top:6px" id="nLeft-gap">Avstand: --</div>
+  </div>
+
+  <div class="slider-row">
+    <div class="slider-header">
+      <span class="slider-label">H&oslash;yre kortvegg (inkl. hjørner)</span>
+      <span class="slider-value" id="nRight-o">2 stk</span>
+    </div>
+    <input type="range" id="nRight" min="2" max="5" step="1" value="2">
+    <div style="font-size:11px;color:var(--muted);margin-top:6px" id="nRight-gap">Avstand: --</div>
+  </div>
+</div>
+
+<!-- KONSTRUKSJONSTYKKELSER -->
+<div class="section">
+  <div class="section-title">Konstruksjonstykkelser</div>
+
+  <div class="slider-row">
+    <div class="slider-header">
+      <span class="slider-label">S&oslash;yle: antall C24 48&times;198 samskrudd</span>
+      <span class="slider-value" id="postN-o">4 stk</span>
+    </div>
+    <input type="range" id="postN" min="2" max="6" step="1" value="4">
+  </div>
+
+  <div class="slider-row">
+    <div class="slider-header">
+      <span class="slider-label">Drager: antall C24 48&times;198 samskrudd</span>
+      <span class="slider-value" id="dragN-o">3 stk</span>
+    </div>
+    <input type="range" id="dragN" min="2" max="5" step="1" value="3">
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="slider-row">
+    <div class="slider-header">
+      <span class="slider-label">B&aelig;relekter (mm)</span>
+      <span class="slider-value" id="baer-o">48 mm</span>
+    </div>
+    <input type="range" id="baer" min="22" max="73" step="1" value="48">
+  </div>
+
+  <div class="slider-row">
+    <div class="slider-header">
+      <span class="slider-label">Luftelekter (mm)</span>
+      <span class="slider-value" id="luft-o">36 mm</span>
+    </div>
+    <input type="range" id="luft" min="22" max="60" step="1" value="36">
+  </div>
+
+  <div class="slider-row">
+    <div class="slider-header">
+      <span class="slider-label">Taktekking inkl. underlag (mm)</span>
+      <span class="slider-value" id="tile-o">50 mm</span>
+    </div>
+    <input type="range" id="tile" min="20" max="80" step="2" value="50">
+  </div>
+</div>
+
+<!-- RESULTATER -->
+<div class="section">
+  <div class="section-title">Beregningsresultater</div>
+  <div class="metrics">
+    <div class="metric-card">
+      <div class="metric-label">Takfall</div>
+      <div class="metric-value" id="ang-shed">--</div>
+      <div class="metric-sub" id="ang-shed-lbl"></div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Netto stigning</div>
+      <div class="metric-value" id="rise-net">--</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Netto veggfeste (uk drager)</div>
+      <div class="metric-value" id="eff-wall" style="font-size:18px">--</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Konstr.tykkelse totalt</div>
+      <div class="metric-value" id="tot-thick">--</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Fri takh&oslash;yde ytterst</div>
+      <div class="metric-value" id="clear-h">--</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Total byggh&oslash;yde</div>
+      <div class="metric-value" id="tot-h">--</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Takflatelengde</div>
+      <div class="metric-value" id="roof-len" style="font-size:18px">--</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">S&oslash;yletverrsnitt</div>
+      <div class="metric-value" id="post-dim" style="font-size:16px">--</div>
+    </div>
+  </div>
+</div>
+
+<!-- STATUS -->
+<div class="status-banner ok" id="status-banner">
+  <div class="status-title" id="status-title">--</div>
+  <div class="status-body" id="status-body">--</div>
+</div>
+
+<!-- LAGOPPBYGGING -->
+<div class="section">
+  <div class="section-title">Lagoppbygging over s&oslash;yleniv&aring;</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Lag (ovenfra ned)</th><th>Tykkelse</th><th>Kumulativt</th></tr></thead>
+      <tbody id="stack-rows"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- TVERRSNITT -->
+<div class="section">
+  <div class="section-title">Tverrsnittsdimensjoner</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Element</th><th>Bredde</th><th>H&oslash;yde</th><th>Areal</th></tr></thead>
+      <tbody id="dim-rows"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SØYLEAVSTANDER -->
+<div class="section">
+  <div class="section-title">S&oslash;yleavstander &mdash; kontroll</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Plassering</th><th>Spenn</th><th>Maks.</th><th>Status</th></tr></thead>
+      <tbody id="span-rows"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SØYLEPOSISJONER -->
+<div class="section">
+  <div class="section-title">S&oslash;yleposisjoner</div>
+  <div style="padding:12px 12px 4px">
+    <svg id="plan-svg" viewBox="0 0 340 180" xmlns="http://www.w3.org/2000/svg"
+         style="width:100%;display:block;border-radius:8px;background:#131729"></svg>
+    <p style="font-size:10px;color:var(--muted);text-align:center;margin-top:6px">Plantegning &mdash; husvegg &oslash;verst, fremre takfot nederst</p>
+  </div>
+  <div class="table-wrap" style="padding-top:0">
+    <table>
+      <thead><tr><th>ID</th><th>Beskrivelse</th><th>X fra v.hjørne</th><th>Y fra husvegg</th></tr></thead>
+      <tbody id="pos-rows"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+var H_C24 = 0.198;
+var IDS = ['wallH','depth','width','postH','margin','postN','dragN','baer','luft','tile','nFront','nLeft','nRight'];
+
+function ff(v, d) { if (d === undefined) d = 2; return parseFloat(v).toFixed(d); }
+function g(id) { return document.getElementById(id); }
+
+function slColor(a) { return a >= 15 ? 'val-ok' : a >= 13 ? 'val-warn' : 'val-err'; }
+function slText(a) {
+  if (a >= 20) return 'God vinkel';
+  if (a >= 15) return 'OK (>=15 grader)';
+  if (a >= 13) return 'Akseptabelt (13-15 grader)';
+  return 'For lavt - under 13 grader';
+}
+
+function spanBadge(v, max) {
+  var c = v <= max ? 'ok' : v <= max + 1 ? 'warn' : 'err';
+  var lbl = c === 'ok' ? 'OK' : c === 'warn' ? 'Grense' : 'For langt';
+  return '<span class="badge badge-' + c + '">' + lbl + '</span>';
+}
+
+function upd() {
+  var wallH  = parseFloat(g('wallH').value);
+  var depth  = parseFloat(g('depth').value);
+  var width  = parseFloat(g('width').value);
+  var postH  = parseFloat(g('postH').value);
+  var margin = parseFloat(g('margin').value) / 1000;
+  var postN  = parseInt(g('postN').value, 10);
+  var dragN  = parseInt(g('dragN').value, 10);
+  var baer   = parseFloat(g('baer').value) / 1000;
+  var luft   = parseFloat(g('luft').value) / 1000;
+  var tile   = parseFloat(g('tile').value) / 1000;
+  var nFront = parseInt(g('nFront').value, 10);
+  var nLeft  = parseInt(g('nLeft').value, 10);
+  var nRight = parseInt(g('nRight').value, 10);
+
+  // Søyleavstander per side
+  var gapFront = width  / (nFront - 1);
+  var gapLeft  = depth  / (nLeft  - 1);
+  var gapRight = depth  / (nRight - 1);
+
+  // Update display values
+  g('wallH-o').textContent   = ff(wallH) + ' m';
+  g('depth-o').textContent   = ff(depth) + ' m';
+  g('width-o').textContent   = ff(width) + ' m';
+  g('postH-o').textContent   = ff(postH) + ' m';
+  g('margin-o').textContent  = Math.round(margin * 1000) + ' mm';
+  g('postN-o').textContent   = postN + ' stk';
+  g('dragN-o').textContent   = dragN + ' stk';
+  g('baer-o').textContent    = Math.round(baer * 1000) + ' mm';
+  g('luft-o').textContent    = Math.round(luft * 1000) + ' mm';
+  g('tile-o').textContent    = Math.round(tile * 1000) + ' mm';
+  g('nFront-o').textContent  = nFront + ' stk';
+  g('nLeft-o').textContent   = nLeft + ' stk';
+  g('nRight-o').textContent  = nRight + ' stk';
+  g('nFront-gap').textContent = 'Avstand mellom soylene: ' + ff(gapFront, 2) + ' m';
+  g('nLeft-gap').textContent  = 'Avstand mellom soylene: ' + ff(gapLeft,  2) + ' m';
+  g('nRight-gap').textContent = 'Avstand mellom soylene: ' + ff(gapRight, 2) + ' m';
+
+  // Core calculations
+  var constrAbove = baer + luft + tile;
+  var totalThick  = H_C24 + constrAbove;
+  var effWall     = wallH - margin - totalThick;
+  var rise        = effWall - postH;
+  var shedAng     = Math.atan2(rise, depth) * 180 / Math.PI;
+  var roofLen     = Math.sqrt(depth * depth + rise * rise);
+  var postBmm     = postN * 48;
+  var dragBmm     = dragN * 48;
+
+  // Metrics
+  var angEl = g('ang-shed');
+  if (rise > 0) {
+    angEl.textContent = ff(shedAng, 1) + '\u00b0';
+    angEl.className = 'metric-value ' + slColor(shedAng);
+    g('ang-shed-lbl').textContent = slText(shedAng);
+    g('ang-shed-lbl').style.color = shedAng >= 15 ? 'var(--ok)' : shedAng >= 13 ? 'var(--warn)' : 'var(--err)';
+  } else {
+    angEl.textContent = '--';
+    angEl.className = 'metric-value val-err';
+    g('ang-shed-lbl').textContent = 'Negativt fall!';
+    g('ang-shed-lbl').style.color = 'var(--err)';
+  }
+
+  g('rise-net').textContent  = rise > 0 ? ff(rise, 3) + ' m' : '--';
+  g('eff-wall').textContent  = ff(effWall, 3) + ' m';
+  g('tot-thick').textContent = Math.round(totalThick * 1000) + ' mm';
+  g('clear-h').textContent   = ff(postH, 2) + ' m';
+  g('tot-h').textContent     = ff(wallH - margin, 2) + ' m';
+  g('roof-len').textContent  = rise > 0 ? ff(roofLen, 2) + ' m' : '--';
+  g('post-dim').textContent  = postBmm + '\u00d7198 mm';
+
+  // Status banner
+  var banner = g('status-banner');
+  var stitle = g('status-title');
+  var sbody  = g('status-body');
+  if (rise <= 0) {
+    banner.className = 'status-banner err';
+    stitle.textContent = 'Negativt takfall!';
+    sbody.textContent = 'Konstruksjonstykkelsen (' + Math.round(totalThick*1000) + ' mm) + frirom (' + Math.round(margin*1000) + ' mm) overstiger maks.hoyde. Senk soyle, ok maks.hoyde, eller bruk tynnere konstruksjon.';
+  } else if (shedAng < 13) {
+    banner.className = 'status-banner err';
+    stitle.textContent = 'Takfall for lavt: ' + ff(shedAng,1) + ' grader';
+    sbody.textContent = 'Minimum 13 grader anbefales. Stigning ' + ff(rise,3) + ' m over ' + ff(depth,2) + ' m dybde.';
+  } else if (shedAng < 15) {
+    banner.className = 'status-banner warn';
+    stitle.textContent = 'Grenseland: ' + ff(shedAng,1) + ' grader';
+    sbody.textContent = 'Funksjonelt, men sjekk taktekkingsprodusentens minimumskrav (vanligvis 15 grader). Netto veggfeste: ' + ff(effWall,3) + ' m.';
+  } else {
+    banner.className = 'status-banner ok';
+    stitle.textContent = 'Godkjent! Takfall ' + ff(shedAng,1) + ' grader';
+    sbody.textContent = 'Netto veggfeste: ' + ff(effWall,3) + ' m. Stigning: ' + ff(rise,3) + ' m. Fri takhoyde ytterst: ' + ff(postH,2) + ' m.';
+  }
+
+  // Lagoppbygging
+  var cum = 0;
+  var stackRows = [
+    ['Taktekking inkl. underlag', Math.round(tile*1000)],
+    ['Luftelekter', Math.round(luft*1000)],
+    ['Baerelekter', Math.round(baer*1000)],
+    ['Drager C24 48x198', 198]
+  ];
+  var sh = '';
+  for (var j = 0; j < stackRows.length; j++) {
+    cum += stackRows[j][1];
+    sh += '<tr><td>' + stackRows[j][0] + '</td><td class="num">' + stackRows[j][1] + ' mm</td><td class="num">' + cum + ' mm</td></tr>';
+  }
+  sh += '<tr class="total-row"><td>Total over soylenivaet</td><td class="num">' + Math.round(totalThick*1000) + ' mm</td><td class="num">--</td></tr>';
+  sh += '<tr><td style="color:var(--muted)">+ Frirom til uk vindu</td><td class="num" style="color:var(--muted)">' + Math.round(margin*1000) + ' mm</td><td class="num" style="color:var(--muted)">--</td></tr>';
+  g('stack-rows').innerHTML = sh;
+
+  // Tverrsnitt
+  var aPost   = (postBmm * 198 / 10000).toFixed(1);
+  var aDrag   = (dragBmm * 198 / 10000).toFixed(1);
+  var aSperre = (48 * 198 / 10000).toFixed(1);
+  var dh = '';
+  var drows = [
+    ['Soyle (' + postN + 'x C24)', postBmm + ' mm', '198 mm', aPost + ' cm2'],
+    ['Drager (' + dragN + 'x C24)', dragBmm + ' mm', '198 mm', aDrag + ' cm2'],
+    ['Sperre (1x C24)', '48 mm', '198 mm', aSperre + ' cm2'],
+    ['Baerelekter', '48 mm', Math.round(baer*1000) + ' mm', '--'],
+    ['Luftelekter', '48 mm', Math.round(luft*1000) + ' mm', '--'],
+    ['Taktekking', '--', Math.round(tile*1000) + ' mm', '--']
+  ];
+  for (var i = 0; i < drows.length; i++) {
+    dh += '<tr><td>' + drows[i][0] + '</td><td class="num">' + drows[i][1] + '</td><td class="num">' + drows[i][2] + '</td><td class="num">' + drows[i][3] + '</td></tr>';
+  }
+  g('dim-rows').innerHTML = dh;
+
+  // Søyleavstander — kontroll
+  var spH = '';
+  var sprows = [
+    ['Langside front (' + nFront + ' soylene)', ff(gapFront,2) + ' m', '3.00 m', spanBadge(gapFront, 3.0)],
+    ['Venstre kortvegg (' + nLeft + ' soylene)', ff(gapLeft,2) + ' m', '4.00 m', spanBadge(gapLeft, 4.0)],
+    ['Hoyre kortvegg (' + nRight + ' soylene)', ff(gapRight,2) + ' m', '4.00 m', spanBadge(gapRight, 4.0)]
+  ];
+  for (var k = 0; k < sprows.length; k++) {
+    spH += '<tr><td>' + sprows[k][0] + '</td><td class="num">' + sprows[k][1] + '</td><td class="num">' + sprows[k][2] + '</td><td>' + sprows[k][3] + '</td></tr>';
+  }
+  g('span-rows').innerHTML = spH;
+
+  // Søyleposisjoner — bygg dynamisk fra antall per side
+  // Koordinater: X=0 venstre hjorne, Y=0 husvegg, Y=depth fremre takfot
+  var posts = [];
+  var pi, px2, py2;
+
+  // Langside fremre takfot (y=depth), nFront soylene jevnt fordelt
+  for (pi = 0; pi < nFront; pi++) {
+    px2 = (nFront === 1) ? width/2 : pi * width / (nFront - 1);
+    posts.push({ id: 'F' + (pi+1), label: 'Fremre, pos ' + (pi+1) + ' av ' + nFront, x: px2, y: depth, side: 'front' });
+  }
+
+  // Venstre kortvegg (x=0), nLeft soylene jevnt fordelt, hjorner delt med front/vegg
+  for (pi = 1; pi < nLeft - 1; pi++) {
+    py2 = pi * depth / (nLeft - 1);
+    posts.push({ id: 'V' + pi, label: 'Venstre kortvegg, pos ' + pi, x: 0, y: py2, side: 'left' });
+  }
+  // Hjorne venstre ved husvegg (hvis nLeft >= 2)
+  posts.push({ id: 'VV', label: 'Venstre kortvegg, ved husvegg', x: 0, y: 0, side: 'wall' });
+
+  // Hoyre kortvegg (x=width), nRight soylene jevnt fordelt
+  for (pi = 1; pi < nRight - 1; pi++) {
+    py2 = pi * depth / (nRight - 1);
+    posts.push({ id: 'H' + pi, label: 'Hoyre kortvegg, pos ' + pi, x: width, y: py2, side: 'right' });
+  }
+  // Hjorne hoyre ved husvegg
+  posts.push({ id: 'HV', label: 'Hoyre kortvegg, ved husvegg', x: width, y: 0, side: 'wall' });
+
+  // Posisjonstabell
+  var ph = '';
+  var pSorted = posts.slice().sort(function(a,b){ return a.id < b.id ? -1 : 1; });
+  for (var m = 0; m < pSorted.length; m++) {
+    var p = pSorted[m];
+    var pc = p.side === 'wall' ? 'var(--warn)' : p.side === 'front' ? 'var(--accent)' : '#a78bfa';
+    ph += '<tr>'
+      + '<td><strong style="font-family:monospace;color:' + pc + '">' + p.id + '</strong></td>'
+      + '<td style="font-size:12px;color:var(--muted)">' + p.label + '</td>'
+      + '<td class="num">' + ff(p.x, 2) + ' m</td>'
+      + '<td class="num">' + ff(p.y, 2) + ' m</td>'
+      + '</tr>';
+  }
+  g('pos-rows').innerHTML = ph;
+
+  // SVG plantegning
+  var PL = 42, PR = 30, PT = 26, PB = 34;
+  var SW = 340, SH = 180;
+  var dW = SW - PL - PR;
+  var dH = SH - PT - PB;
+  var sc = Math.min(dW / width, dH / depth);
+  var oX = PL + (dW - width * sc) / 2;
+  var oY = PT + (dH - depth * sc) / 2;
+  function pxx(x) { return oX + x * sc; }
+  function pyy(y) { return oY + y * sc; }
+
+  var svg = '';
+  svg += '<defs><marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#4b5563"/></marker></defs>';
+
+  // Husvegg
+  svg += '<rect x="' + (pxx(0)-2) + '" y="' + (pyy(0)-7) + '" width="' + (width*sc+4) + '" height="7" fill="#2a3a5a" stroke="#4f8ef7" stroke-width="0.8" rx="1"/>';
+  svg += '<text x="' + pxx(width/2) + '" y="' + (pyy(0)-10) + '" font-size="7" fill="#7a8299" text-anchor="middle">HUSVEGG</text>';
+
+  // Platting
+  svg += '<rect x="' + pxx(0) + '" y="' + pyy(0) + '" width="' + (width*sc) + '" height="' + (depth*sc) + '" fill="#161e30" stroke="#2a3045" stroke-width="0.7" rx="2"/>';
+
+  // Sperrer c/c 400mm
+  var numSp = Math.round(width / 0.40);
+  for (var si = 0; si <= numSp; si++) {
+    var ssx = si * (width / numSp);
+    svg += '<line x1="' + pxx(ssx) + '" y1="' + pyy(0) + '" x2="' + pxx(ssx) + '" y2="' + pyy(depth) + '" stroke="#92400e" stroke-width="0.6" stroke-dasharray="3,3" opacity="0.4"/>';
+  }
+
+  // Dragere
+  svg += '<line x1="' + pxx(0) + '" y1="' + (pyy(0)+2) + '" x2="' + pxx(width) + '" y2="' + (pyy(0)+2) + '" stroke="#f6a623" stroke-width="2" stroke-dasharray="7,3" opacity="0.8"/>';
+  svg += '<line x1="' + pxx(0) + '" y1="' + (pyy(depth)-2) + '" x2="' + pxx(width) + '" y2="' + (pyy(depth)-2) + '" stroke="#f6a623" stroke-width="2" stroke-dasharray="7,3" opacity="0.8"/>';
+  svg += '<line x1="' + (pxx(0)+2) + '" y1="' + pyy(0) + '" x2="' + (pxx(0)+2) + '" y2="' + pyy(depth) + '" stroke="#f6a623" stroke-width="2" stroke-dasharray="7,3" opacity="0.8"/>';
+  svg += '<line x1="' + (pxx(width)-2) + '" y1="' + pyy(0) + '" x2="' + (pxx(width)-2) + '" y2="' + pyy(depth) + '" stroke="#f6a623" stroke-width="2" stroke-dasharray="7,3" opacity="0.8"/>';
+
+  // Takfall-pil
+  var midX2 = pxx(width/2);
+  svg += '<line x1="' + midX2 + '" y1="' + (pyy(0)+10) + '" x2="' + midX2 + '" y2="' + (pyy(depth)-10) + '" stroke="#4b5563" stroke-width="1" marker-end="url(#arr)"/>';
+  svg += '<text x="' + (midX2+5) + '" y="' + (pyy(depth/2)+3) + '" font-size="7" fill="#7a8299">Fall ' + (rise>0?ff(shedAng,1):'--') + 'gr</text>';
+
+  // Soylene
+  for (var n = 0; n < posts.length; n++) {
+    var po = posts[n];
+    var cx = pxx(po.x);
+    var cy = pyy(po.y);
+    var pcol = po.side === 'wall' ? '#f6a623' : po.side === 'front' ? '#4f8ef7' : '#a78bfa';
+    var pfill = po.side === 'wall' ? '#2e1f06' : po.side === 'front' ? '#0a1628' : '#1a1030';
+    svg += '<circle cx="' + cx + '" cy="' + cy + '" r="4" fill="' + pfill + '" stroke="' + pcol + '" stroke-width="1.5"/>';
+    var lx = cx, ly = cy, anc = 'middle', ldy = -7;
+    if (Math.abs(po.x) < 0.01)              { lx = cx - 6; anc = 'end';   ldy = 0; }
+    else if (Math.abs(po.x-width) < 0.01)   { lx = cx + 6; anc = 'start'; ldy = 0; }
+    else if (po.y < 0.01)                    { ly = cy - 6; ldy = 0; }
+    else if (Math.abs(po.y-depth) < 0.01)   { ly = cy + 11; ldy = 0; }
+    svg += '<text x="' + lx + '" y="' + (ly+ldy) + '" font-size="7" fill="' + pcol + '" text-anchor="' + anc + '" font-family="monospace">' + po.id + '</text>';
+  }
+
+  // Dimensjonslinjer
+  var dY = pyy(depth) + 14;
+  svg += '<line x1="' + pxx(0) + '" y1="' + dY + '" x2="' + pxx(width) + '" y2="' + dY + '" stroke="#4b5563" stroke-width="0.6"/>';
+  svg += '<line x1="' + pxx(0) + '" y1="' + (pyy(depth)+6) + '" x2="' + pxx(0) + '" y2="' + (dY+2) + '" stroke="#4b5563" stroke-width="0.6"/>';
+  svg += '<line x1="' + pxx(width) + '" y1="' + (pyy(depth)+6) + '" x2="' + pxx(width) + '" y2="' + (dY+2) + '" stroke="#4b5563" stroke-width="0.6"/>';
+  svg += '<text x="' + pxx(width/2) + '" y="' + (dY+9) + '" font-size="7" fill="#7a8299" text-anchor="middle">B=' + ff(width) + 'm</text>';
+  var dX = pxx(width) + 12;
+  svg += '<line x1="' + dX + '" y1="' + pyy(0) + '" x2="' + dX + '" y2="' + pyy(depth) + '" stroke="#4b5563" stroke-width="0.6"/>';
+  svg += '<line x1="' + (pxx(width)+5) + '" y1="' + pyy(0) + '" x2="' + (dX+2) + '" y2="' + pyy(0) + '" stroke="#4b5563" stroke-width="0.6"/>';
+  svg += '<line x1="' + (pxx(width)+5) + '" y1="' + pyy(depth) + '" x2="' + (dX+2) + '" y2="' + pyy(depth) + '" stroke="#4b5563" stroke-width="0.6"/>';
+  svg += '<text x="' + (dX+5) + '" y="' + (pyy(depth/2)+3) + '" font-size="7" fill="#7a8299">D=' + ff(depth) + 'm</text>';
+
+  g('plan-svg').innerHTML = svg;
+}
+
+// Events
+for (var _i = 0; _i < IDS.length; _i++) {
+  (function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input',    upd);
+    el.addEventListener('change',   upd);
+    el.addEventListener('touchend', upd);
+  })(IDS[_i]);
+}
+
+upd();
+</script>
+</body>
+</html>
